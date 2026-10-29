@@ -204,6 +204,7 @@ def generate_chart():
         app.logger.error(f"Error in /generate_chart: {e}")
         return jsonify({"error": f"Chart generation failed: {str(e)}"}), 500
 ########################################################################################
+##############################################
 @app.route('/generate_wordcloud', methods=['POST'])
 def generate_wordcloud():
     try:
