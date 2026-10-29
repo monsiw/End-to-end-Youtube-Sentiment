@@ -78,7 +78,7 @@ def load_params(params_path: str) -> dict:
         logger.error('Error loading parameters from %s: %s', params_path, e)
         raise
 
-
+###############testtest###############
 def evaluate_model(model, X_test: np.ndarray, y_test: np.ndarray):
     """Evaluate the model and log classification metrics and confusion matrix."""
     try:
@@ -120,7 +120,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         # Save the dictionary as a JSON file
         with open(file_path, 'w') as file:
             json.dump(model_info, file, indent=4)
-        logger.debug('Model info saved to %s', file_path)
+        logcdger.debug('Model info saved to %s', file_path)
     except Exception as e:
         logger.error('Error occurred while saving the model info: %s', e)
         raise
