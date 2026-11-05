@@ -324,7 +324,9 @@ def generate_trend_graph():
         app.logger.error(f"Error in /generate_trend_graph: {e}")
         return jsonify({"error": f"Trend graph generation failed: {str(e)}"}), 500
 
-
+@app.route("/health")
+def health():
+    return {"status": "ok"}, 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
