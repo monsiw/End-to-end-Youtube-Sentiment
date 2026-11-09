@@ -253,7 +253,6 @@ def generate_trend_graph():
         df = pd.DataFrame(sentiment_data)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-
         # Set the timestamp as the index
         df.set_index('timestamp', inplace=True)
 
