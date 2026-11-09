@@ -8,18 +8,36 @@ NGINX_CONF="/etc/nginx/conf.d/sentiment.conf"
 exec 9>/tmp/sentiment-deploy.lock
 flock 9
 
-# Ustal, na który port Nginx kieruje ruch.
+# Sprawdź aktualny port Nginx.
 if sudo grep -q 'proxy_pass http://127.0.0.1:8081;' "$NGINX_CONF"; then
-    NEW_PORT=8082
-    NEW_NAME=cnncls-green
-    OLD_NAME=cnncls-blue
+    ACTIVE_PORT=8081
+    ACTIVE_NAME=cnncls-blue
+    INACTIVE_PORT=8082
+    INACTIVE_NAME=cnncls-green
+
 elif sudo grep -q 'proxy_pass http://127.0.0.1:8082;' "$NGINX_CONF"; then
-    NEW_PORT=8081
-    NEW_NAME=cnncls-blue
-    OLD_NAME=cnncls-green
+    ACTIVE_PORT=8082
+    ACTIVE_NAME=cnncls-green
+    INACTIVE_PORT=8081
+    INACTIVE_NAME=cnncls-blue
+
 else
     echo "Nieznana konfiguracja Nginx"
     exit 1
+fi
+
+# Pierwsze wdrożenie: żaden kontener Blue/Green nie istnieje.
+if ! docker ps -a --format '{{.Names}}' | grep -qx 'cnncls-blue' && \
+   ! docker ps -a --format '{{.Names}}' | grep -qx 'cnncls-green'; then
+
+    NEW_PORT="$ACTIVE_PORT"
+    NEW_NAME="$ACTIVE_NAME"
+    OLD_NAME=""
+
+else
+    NEW_PORT="$INACTIVE_PORT"
+    NEW_NAME="$INACTIVE_NAME"
+    OLD_NAME="$ACTIVE_NAME"
 fi
 
 # Usuń nieaktywny kontener z poprzedniego wdrożenia.
@@ -49,8 +67,8 @@ done
 
 if [ "$READY" != true ]; then
     echo "Nowa wersja nie przeszła health check"
-    docker logs --tail 50 "$NEW_NAME"
-    docker rm -f "$NEW_NAME"
+    docker logs --tail 50 "$NEW_NAME" || true
+    docker rm -f "$NEW_NAME" || true
     exit 1
 fi
 
@@ -64,12 +82,21 @@ sudo sed -i \
 
 # Sprawdź konfigurację przed przeładowaniem.
 if ! sudo nginx -t || ! sudo systemctl reload nginx; then
+    echo "Nie udało się przełączyć Nginx"
+
     sudo cp "${NGINX_CONF}.bak" "$NGINX_CONF"
     sudo nginx -t
     sudo systemctl reload nginx
-    echo "Nie udało się przełączyć Nginx"
+
+    docker rm -f "$NEW_NAME" || true
     exit 1
 fi
 
 echo "Nowa wersja działa na porcie ${NEW_PORT}"
-echo "Poprzedni kontener ${OLD_NAME} pozostaje jako rezerwowy"
+echo "Nowa wersja działa na porcie ${NEW_PORT}"
+
+if [ -n "$OLD_NAME" ]; then
+    echo "Poprzedni kontener ${OLD_NAME} pozostaje jako rezerwowy"
+else
+    echo "Pierwsze wdrożenie zakończone"
+fi
