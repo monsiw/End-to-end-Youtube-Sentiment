@@ -67,7 +67,18 @@ done
 
 if [ "$READY" != true ]; then
     echo "Nowa wersja nie przeszła health check"
-    docker logs --tail 50 "$NEW_NAME" || true
+
+    echo "Odpowiedź HTTP:"
+    curl -i --max-time 10 \
+        "http://127.0.0.1:${NEW_PORT}/health" || true
+
+    echo "Zarejestrowane endpointy Flask:"
+    docker exec "$NEW_NAME" python -c \
+        "from app import app; print(app.url_map)" || true
+
+    echo "Logi kontenera:"
+    docker logs --tail 100 "$NEW_NAME" || true
+
     docker rm -f "$NEW_NAME" || true
     exit 1
 fi
