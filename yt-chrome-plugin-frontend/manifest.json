@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Sentiment Insights",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Analyzes YouTube video comments for sentiment.",
   "action": {
     "default_popup": "popup.html"
