@@ -7,7 +7,7 @@ on:
       - main
     paths-ignore:
       - 'README.md'
-
+      - 'yt-chrome-plugin-frontend/**'
 permissions:
   contents: read
 
@@ -97,7 +97,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          bash deployment/deploy.sh \
+          bash deployment/deploy-k8s.sh \
             "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       # - name: Run Docker container

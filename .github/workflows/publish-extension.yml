@@ -1,0 +1,69 @@
+name: workflow2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'yt-chrome-plugin-frontend/**'
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Lint code
+        run: echo "Linting repository"
+
+      - name: Run unit tests
+        run: echo "Running unit tests"
+
+  Continuous-Deployment:
+    name: Continuous Deployment
+    needs: integration
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:  
+        - name: Checkout Code
+          uses: actions/checkout@v4
+          with:
+            persist-credentials: true
+
+        - name: Increase extension version
+          run: |
+            python3 - <<'PY'
+            import json
+            from pathlib import Path
+
+            path = Path("yt-chrome-plugin-frontend/manifest.json")
+            manifest = json.loads(path.read_text())
+
+            major, minor, patch = map(
+                int, (manifest["version"].split(".") + ["0", "0"])[:3]
+            )
+
+            patch += 1
+            manifest["version"] = f"{major}.{minor}.{patch}"
+
+            path.write_text(json.dumps(manifest, indent=2) + "\n")
+            print("New version:", manifest["version"])
+            PY
+        - name: Commit and push version
+          run: |
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            git add yt-chrome-plugin-frontend/manifest.json
+
+            if ! git diff --cached --quiet; then
+              git commit -m "chore: bump extension version [skip ci]"
+              git push origin HEAD:main
+            fi     

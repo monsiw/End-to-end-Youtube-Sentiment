@@ -15,9 +15,21 @@ from nltk.stem import WordNetLemmatizer
 from mlflow.tracking import MlflowClient
 import matplotlib.dates as mdates
 import pickle
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+import os
+from prometheus_flask_exporter import PrometheusMetrics
+
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+metrics = PrometheusMetrics(app)
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["100 per minute"]
+)
 
 # Define the preprocessing function
 def preprocess_comment(comment):
@@ -85,12 +97,14 @@ model, vectorizer = load_model("./lgbm_model.pkl", "./tfidf_vectorizer.pkl")
 # model, vectorizer = load_model_and_vectorizer("my_model", "1", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
 
 @app.route('/')
+@limiter.limit("10 per minute")
 def home():
     return "Welcome to our flask api"
 
 
 
 @app.route('/predict_with_timestamps', methods=['POST'])
+@limiter.limit("10 per minute")
 def predict_with_timestamps():
     data = request.json
     comments_data = data.get('comments')
@@ -126,6 +140,7 @@ def predict_with_timestamps():
 
 
 @app.route('/predict', methods=['POST'])
+@limiter.limit("10 per minute")
 def predict():
     data = request.json
     comments = data.get('comments')
@@ -160,6 +175,7 @@ def predict():
 
 
 @app.route('/generate_chart', methods=['POST'])
+@limiter.limit("10 per minute")
 def generate_chart():
     try:
         data = request.get_json()
@@ -206,6 +222,7 @@ def generate_chart():
 ########################################################################################
 ##############################################
 @app.route('/generate_wordcloud', methods=['POST'])
+@limiter.limit("10 per minute")
 def generate_wordcloud():
     try:
         data = request.get_json()
@@ -242,6 +259,7 @@ def generate_wordcloud():
         return jsonify({"error": f"Word cloud generation failed: {str(e)}"}), 500
 
 @app.route('/generate_trend_graph', methods=['POST'])
+@limiter.limit("10 per minute")
 def generate_trend_graph():
     try:
         data = request.get_json()
@@ -328,6 +346,23 @@ def generate_trend_graph():
 def health():
     return {"status": "ok"}, 200
 
+@app.get("/health/live")
+def health_live():
+    return jsonify(status="alive"), 200
+
+
+@app.get("/health/ready")
+def health_ready():
+    # Zakładamy, że model i vectorizer są ładowane
+    # podczas inicjalizacji aplikacji.
+
+    if model is None or vectorizer is None:
+        return jsonify(
+            status="not_ready",
+            reason="ML dependencies unavailable"
+        ), 503
+
+    return jsonify(status="ready"), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
