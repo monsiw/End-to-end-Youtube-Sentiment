@@ -28,7 +28,7 @@ else
     exit 1
 fi
 
-# Funkcje pomocnicze.
+# Funkcje pomocnicze
 container_exists() {
     docker container inspect "$1" >/dev/null 2>&1
 }
