@@ -35,6 +35,8 @@ spec:
           ports:
             - containerPort: 8080
 
+
+
           startupProbe:
             httpGet:
               path: /health/live
