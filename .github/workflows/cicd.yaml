@@ -90,7 +90,7 @@ jobs:
       #       docker rm -f cnncls
       #     fi
 
-      - name: Deploy Blue-Green
+      - name: Deploy k8s
         env:
           ECR_REGISTRY: ${{ secrets.AWS_ECR_LOGIN_URI }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
