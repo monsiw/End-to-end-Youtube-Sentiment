@@ -11,13 +11,13 @@ exec 9>/tmp/sentiment-deploy.lock
 flock 9
 
 # Ustal aktualny port Nginx.
-if sudo -n grep -q 'proxy_pass http://127.0.0.1:8081;' "$NGINX_CONF"; then
+if grep -q 'proxy_pass http://127.0.0.1:8081;' "$NGINX_CONF"; then
     ACTIVE_PORT=8081
     ACTIVE_NAME=cnncls-blue
     INACTIVE_PORT=8082
     INACTIVE_NAME=cnncls-green
 
-elif sudo -n grep -q 'proxy_pass http://127.0.0.1:8082;' "$NGINX_CONF"; then
+elif grep -q 'proxy_pass http://127.0.0.1:8082;' "$NGINX_CONF"; then
     ACTIVE_PORT=8082
     ACTIVE_NAME=cnncls-green
     INACTIVE_PORT=8081
